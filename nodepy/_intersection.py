@@ -1,5 +1,3 @@
-# coding=utf-8
-from __future__ import division 
 import math
 import FluidProps
 import matplotlib.pyplot as plt

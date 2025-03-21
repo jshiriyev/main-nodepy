@@ -1,7 +1,5 @@
-# coding=utf-8
 import FluidProps
 import math
-
 
 def Pgrad(P, T, oil_rate, wtr_rate, Gor, gas_grav, oil_grav, wtr_grav, d, angle):
     """Function to Calculate the Flowing Pressure Gradient by the Method of Beggs and Brill"""
@@ -158,8 +156,6 @@ def Pgrad(P, T, oil_rate, wtr_rate, Gor, gas_grav, oil_grav, wtr_grav, d, angle)
     Ek = um * usg * rhobar / 32.17 / P / 144                              #Kinetic energy factor
     return (Pgrad_pe + Pgrad_f) / (1 - Ek)                               #Overall pressure gradient, psi/ft
 
-
-
 def Fric(Nre, eps):
     """Calculate Fanning Friction Factor using the Chen Equation """
     try:
@@ -171,9 +167,6 @@ def Fric(Nre, eps):
          print(inst)       
     
     return (1 / Temp) ** 2
-
-
-
 
 def Pwf_q(FWHP, FWHT,Oil_Rate,Water_Rate,GOR,GasGrav,API, WaterGrav, ID, Angle, Depth, FBHT):
     """Function to calculate the Pwf as function of rate"""
@@ -206,11 +199,5 @@ def Pwf_q(FWHP, FWHT,Oil_Rate,Water_Rate,GOR,GasGrav,API, WaterGrav, ID, Angle, 
         i=i+1
 
     return PressList[-1]
-
-
-
-
-
-
 
 #print(Pgrad(150,101,100,50,300,0.65,35,1.07,2.44,90))
