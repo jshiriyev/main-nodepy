@@ -1,9 +1,8 @@
-import numpy
+import numpy as np
 
 from scipy.sparse import csr_matrix as csr
 
 class BuckleyLeverett():
-    
     """
     based on Buckley-Leverett solution
     """
@@ -15,43 +14,20 @@ class BuckleyLeverett():
         self.muo = muo
         self.muw = muw
 
-    def k_model(self):
-
-        N = 1000
-
-        self.Sw = numpy.linspace(self.Swr,1-self.Sor,N)
-
-        self.kro = 2*(1-self.Sw-self.Sor)**2
-        self.krw = (self.Sw-self.Swr)**3
-
-    def coreymodel(self,koro,korw,m,n):
-
-        N = 1000
-
-        self.Sw = numpy.linspace(self.Swr,1-self.Sor,N)
-
-        S = (self.Sw-self.Swr)/(1-self.Swr-self.Sor)
-
-        self.kro = koro*(1-S)**m
-        self.krw = korw*S**n
-
-        ## end-point mobility ratio calculation
-        self.Mo = (korw/self.muw)/(koro/self.muo)
-
     def fractionalflow(self):
 
         self.fw = (self.krw*self.muo)/(self.krw*self.muo+self.kro*self.muw)
         
         N = self.fw.size
 
-        one = numpy.ones(N-1)
+        one = np.ones(N-1)
 
-        idx = numpy.array(list(range(N)))
+        idx = np.array(list(range(N)))
 
-        row = numpy.concatenate(((idx[0],idx[-1]),idx[:-1],idx[1:]))
-        col = numpy.concatenate(((idx[0],idx[-1]),idx[1:],idx[:-1]))
+        row = np.concatenate(((idx[0],idx[-1]),idx[:-1],idx[1:]))
+        col = np.concatenate(((idx[0],idx[-1]),idx[1:],idx[:-1]))
 
-        val = numpy.concatenate(((-1,1),one,-one))
+        val = np.concatenate(((-1,1),one,-one))
 
         G = csr((val,(row,col)),shape=(N,N))
 
@@ -74,19 +50,19 @@ class BuckleyLeverett():
         
         self.fwi = self.fw_IC[0]
         
-        idx = numpy.argmax(self.fw_der_IC)
+        idx = np.argmax(self.fw_der_IC)
 
         fw_dh = self.fw_IC[idx:]
         Sw_dh = self.Sw_IC[idx:]
 
         pseudo_fw_der = (fw_dh-self.fwi)/(Sw_dh-self.Swi)
 
-        self.fwf = fw_dh[numpy.argmin(numpy.abs(self.fw_der_IC[idx:]-pseudo_fw_der))]
-        self.Swf = Sw_dh[numpy.argmin(numpy.abs(self.fw_der_IC[idx:]-pseudo_fw_der))]
+        self.fwf = fw_dh[np.argmin(np.abs(self.fw_der_IC[idx:]-pseudo_fw_der))]
+        self.Swf = Sw_dh[np.argmin(np.abs(self.fw_der_IC[idx:]-pseudo_fw_der))]
 
         self.Sw_avg = self.Swi+(1-self.fwi)/(self.fwf-self.fwi)*(self.Swf-self.Swi)
 
-        fw_der_corrected = numpy.empty_like(self.fw_der_IC)
+        fw_der_corrected = np.empty_like(self.fw_der_IC)
 
         fw_der_corrected[self.Sw_IC>=self.Swf] = self.fw_der_IC[self.Sw_IC>=self.Swf]
         fw_der_corrected[self.Sw_IC<self.Swf] = self.fw_der_IC[self.Sw_IC==self.Swf]
@@ -118,9 +94,9 @@ class BuckleyLeverett():
 
         idx = self.tp<=self.tbt
 
-        N = numpy.count_nonzero(idx)
+        N = np.count_nonzero(idx)
 
-        self.tp[idx] = numpy.linspace(0,self.tbt,N)
+        self.tp[idx] = np.linspace(0,self.tbt,N)
         self.Np[idx] = v/L*(1-self.fwi)*self.tp[idx]
         
         self.Wi = v/L*self.tp
@@ -170,7 +146,7 @@ if __name__ == "__main__":
 
     Np = BL.Np*BL.Vp/5.615          # oil produced, bbl
 
-    qo = numpy.empty_like(Np)
+    qo = np.empty_like(Np)
     qo[0] = Np[1]/BL.tp[1]
     qo[1:] = Np[1:]/BL.tp[1:]       # bbl/day
 
@@ -264,8 +240,8 @@ if __name__ == "__main__":
 
     # WATER SATURATION PORFILE WITH RESPECT TO DISTANCE
 
-    x = numpy.insert(BL.x_Sw,0,2*L)
-    y = numpy.insert(BL.Sw_IC,0,BL.Swi)
+    x = np.insert(BL.x_Sw,0,2*L)
+    y = np.insert(BL.Sw_IC,0,BL.Swi)
     plt.plot(x,y,'k')
     plt.xlim((0,L))
     plt.ylim((0,1))

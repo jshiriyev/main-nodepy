@@ -1,8 +1,9 @@
 import logging
 
-import numpy
+import numpy as np
 
-from ._reservoir import Reservoir, Solution
+from ._solver import BaseSolver
+from ._result import Result
 
 @dataclass(frozen=True)
 class Boundary:
@@ -17,9 +18,14 @@ class Boundary:
     # Use infinite system solution with less than 1 % Error for lesser values
     time_infinite: float = None
 
-class Pseudo(Reservoir):
+class Pseudo(BaseSolver):
+    """Pseudo Steady State solution based on shape factors.
 
-    gamma = 0.5772
+    The solver is also applicable when there are two slightly compressible fluids
+    where the second one is at irreducible saturation, not mobile.
+    
+    """
+    GAMMA = np.exp(0.5772)
 
     GEOMETRY = {
         "circle": Boundary(31.62,0.1,0.06,0.1),
@@ -28,67 +34,101 @@ class Pseudo(Reservoir):
         "hexagon": Boundary(31.6,0.1,0.06,0.1),
         }
 
-    def __init__(self,shape,*args,**kwargs):
-        # There can be two slightly compressible fluids where the
-        # second one is at irreducible saturation, not mobile
+    def __init__(self,*args,**kwargs):
+        
         super().__init__(*args,**kwargs)
 
+    def __call__(self,well,shape:str="circle",pinit:float=None):
+
+        self.well  = well
         self.shape = shape
+        self.tmin  = None
 
-        self.tmin = None
+        self.pterm = None
+        self.pinit = pinit
+        
+        return self
 
-        self.vpore = None
+    @property
+    def well(self):
+        """Getter for the well item."""
+        return self._well
+    
+    @well.setter
+    def well(self,value):
+        """Setter for the well item."""
+        self._well = value
 
     @property
     def shape(self):
+        """Getter for the reservoir boundary shape."""
         return self._shape
 
     @shape.setter
     def shape(self,value):
+        """Setter for the reservoir boundary shape."""
         self._shape = value
-    
+
+    @property
+    def bound(self):
+        """Getter for the reservoir shape parameters."""
+        return self.GEOMETRY[self.shape]
+
     @property
     def tmin(self):
+        """Getter for the minimum time where PSS solution is applicable."""
         return self._tmin/(24*60*60)
 
     @tmin.setter
     def tmin(self,value):
-        self._tmin = self.GEOMETRY[self.shape].time_pss_accurate/(self._hdiff/self._area)
+        """Setter for the minimum time where PSS solution is applicable."""
+        self._tmin = self.dim2t(self.bound.time_pss_accurate)*(24*60*60)
 
-    def tDA(self,values):
-        return (self._hdiff/self._area)*values*(24*60*60)
+    def t2dim(self,values:np.ndarray):
+        """Converts time values to dimensionless time values."""
+        return (self._hdiff/self._surface)*np.asarray(values)*(24*60*60)
+
+    def dim2t(self,values:np.ndarray):
+        """Converts dimensionless time values to time values."""
+        return (self._surface/self._hdiff)*np.asarray(values)/(24*60*60)
 
     @property
-    def vpore(self):
-        return self._vpore/(0.3048**3)
-    
-    @vpore.setter
-    def vpore(self,value):
-        self._vpore = self._area*self._height*self.rrock._poro
+    def pterm(self):
+        """Getter for the pressure term used in analytical equations."""
+        return self._pterm/6894.76
 
-    def _time_correction(self,values):
+    @pterm.setter
+    def pterm(self,value):
+        """Setter for the pressure term used in analytical equations."""
+        self._pterm = (self.well._cond)/(2*np.pi*self._flow*self.fluid._mobil)
 
-        boundary = values>=self.tmin
+    @property
+    def pinit(self):
+        """Getter for the initial reservoir pressure."""
+        return self._pinit/6894.76
 
-        if numpy.any(~boundary):
-            logging.warning("Not all times satisfy the early time limits!")
+    @pinit.setter
+    def pinit(self,values):
+        """Setter for the initial reservoir pressure."""
+        self._pinit = np.ravel(value).astype(float)*6894.76
 
-        return numpy.where(boundary,values,numpy.nan)
+    def solve(self,times,nodes):
+        """Solves for the pressure values at pseudo-steady state."""
+        times  = self.correct(times)
+        result = Result(times,nodes)
+        inner  = (4*self._surface)/(self.GAMMA*self.bound.factor*self.well._radius**2)
 
-    def solve(self,times,points):
-
-        times = self._time_correction(times)
-
-        result = Solution(times,points)
-
-        CA = self.GEOMETRY[self.shape].factor
-
-        inner = (4*self._area)/(numpy.exp(self.gamma)*CA*self.well._radius**2)
-
-        deltap1 = self._pterm*(1/2*numpy.log(inner)+self.well._skin)
-
+        deltap1 = self._pterm*(1/2*np.log(inner)+self.well._skin)
         deltap2 = (self.well._cond*self.fluid._fvf)/(self._vpore*self._tcomp)*result._times
-
         result._press = self._pinit-deltap1-deltap2
 
         return result
+
+    def correct(self,values):
+        """It sets the time values to np.nan if it is outside of the solver limit."""
+        boundary = values>=self.tmin
+
+        if np.any(~boundary):
+            logging.warning("Not all times satisfy the early time limits!")
+
+        return np.where(boundary,values,np.nan)
