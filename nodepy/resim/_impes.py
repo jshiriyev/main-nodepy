@@ -9,8 +9,8 @@ from respy.solver._matrix import Matrix
 class IMPES(BaseSolver):
     """
     The class solves for single phase reservoir flow in Rectangular Cuboids;
-    """
 
+    """
     def __init__(self,*args,**kwargs):
 
         super().__init__(*args,**kwargs)
