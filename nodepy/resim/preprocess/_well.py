@@ -1,6 +1,6 @@
 from ._const import Constraint
 
-class Well(Constraint):
+class WellBound(Constraint):
     """
     Represents a well object used in a reservoir simulator.
     """
@@ -71,7 +71,7 @@ class Well(Constraint):
 
 if __name__ == "__main__":
 
-    well = Well((3,),axis="z",radius=0.5,wrate=500,start=3)
+    well = WellBound((3,),axis="z",radius=0.5,wrate=500,start=3)
 
     print(well.axis)
     print(well._axis)

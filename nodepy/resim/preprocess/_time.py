@@ -10,6 +10,7 @@ class Time():
 		Parameters
 		----------
 		steps   : time steps in days.
+
 		"""
 		self.steps = steps
 		self.total = None
@@ -57,40 +58,27 @@ class Time():
 
 	@property
 	def times(self):
-		"""Getter for times array"""
+		"""Getter for times array."""
 		return self._times/(24*60*60)
 
 	@times.setter
 	def times(self,value):
-		"""Setter for times array"""
+		"""Setter for times array."""
 		self._times = np.insert(np.cumsum(self._steps),0,0)
 
-def bysteps(steps:np.ndarray) -> Time:
-	"""
-	Creates a Time instance with irregularly spaced time steps.
+	@staticmehtod
+	def get(step:float|np.ndarray,*,nums:int=None) -> Time:
+		"""
+		Creates a Time instance with (ir)regularly spaced time steps.
 
-	Parameters:
-        steps (array) : The size of time step for the simulation.
+		Parameters:
+	        step (float or array-like) : The size of time step for the simulation.
 
-    Returns:
-        Time : A Time object with regularly spaced time steps.
+	    Returns:
+	        Time : A Time object with regularly spaced time steps.
 
-	"""
-	return Time(np.asarray(steps))
-
-def regular(step:float,nums:int) -> Time:
-	"""
-	Creates a Time instance with regularly spaced time steps.
-
-    Parameters:
-        step (float) : The size of each time step.
-        nums (int) 	 : The number of time steps.
-
-    Returns:
-        Time : A Time object with regularly spaced time steps.
-
-	"""
-	return Time(np.full(nums,step))
+		"""
+		return Time(np.asarray(step)) if nums is None else Time(np.full(nums,step))
 
 if __name__ == "__main__":
 

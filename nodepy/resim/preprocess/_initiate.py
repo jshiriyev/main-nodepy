@@ -1,6 +1,6 @@
 import numpy as np
 
-class Initiate():
+class ResInit():
 
 	patm = 14.7
 

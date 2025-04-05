@@ -1,6 +1,6 @@
 from ._const import Constraint
 
-class Edge(Constraint):
+class EdgeBound(Constraint):
     """
     Represents the edges of reservoir in the simulator.
     """
@@ -42,7 +42,7 @@ class Edge(Constraint):
 
 if __name__ == "__main__":
 
-    bcond = Edge("xmin",press=500)
+    bcond = EdgeBound("xmin",press=500)
 
     print(bcond.cond)
     print(bcond.face)
